@@ -1,0 +1,303 @@
+<!doctype html>
+
+<head>
+    <style>
+    /* CSS comes here */
+    #video {
+        border: 1px solid black;
+        width: 320px;
+        height: 240px;
+    }
+
+    #photo {
+        border: 1px solid black;
+        width: 320px;
+        height: 240px;
+    }
+
+    #canvas {
+        display: none;
+    }
+
+    .camera {
+        width: 340px;
+        display: inline-block;
+    }
+
+    .output {
+        width: 340px;
+        display: inline-block;
+    }
+
+    #startbutton {
+        display: block;
+        position: relative;
+        margin-left: auto;
+        margin-right: auto;
+        bottom: 36px;
+        padding: 5px;
+        background-color: #6a67ce;
+        border: 1px solid rgba(255, 255, 255, 0.7);
+        font-size: 14px;
+        color: rgba(255, 255, 255, 1.0);
+        cursor: pointer;
+    }
+
+    .contentarea {
+        font-size: 16px;
+        font-family: Arial;
+        text-align: center;
+    }
+    </style>
+    <title>My Favorite Sport</title>
+</head>
+
+<body>
+    <div class="contentarea" style="border-style: solid; border-color: darkslategray;">
+        <h1>
+            Practice to capture Photo
+        </h1>
+		<div id="choice" style="border-style: solid; background-color: darkcyan;">
+            <h4>Mode: </h4>
+  <input type="radio" id="r1" name="rate" value="idcard"  checked="checked"> ID CARD
+  <input type="radio" id="r2" name="rate" value="face" > FACE
+
+</div>
+<p></p>
+<div>
+    <h3>Once you change the mode click on start button.</h3>
+</div>
+        <div class="camera">
+            <video id="video" hidden>Video stream not available.</video>
+        </div>
+        <div><button id="startbutton" onclick="restarts()">Start video</button></div>
+        <canvas id="canvas"></canvas>
+		
+        <div class="output">
+            <img id="photo" alt="The screen capture will appear in this box.">
+        </div>
+		
+		<div><button id="takephotobutton">Take Photo</button></div>
+		<canvas id="canvas1"></canvas>
+		
+      <!--  <div class="output">
+            <img id="photo1" alt="The screen capture will appear in this box.">
+        </div> -->
+		
+		
+    </div>
+
+    <script>
+    /* JS comes here */
+    (function() {
+
+        var width = 320; // We will scale the photo width to this
+        var height = 0; // This will be computed based on the input stream
+
+        var streaming = false;
+
+        var video = null;
+        var canvas = null;
+        var photo = null;
+        var startbutton = null;
+		var canvas1 = null;
+        var photo1 = null;
+        var takephotobutton = null;
+var choice = null 
+
+
+var rate_value;
+
+
+        function startup() {
+            video = document.getElementById('video');
+            canvas = document.getElementById('canvas');
+            photo = document.getElementById('photo');
+            startbutton = document.getElementById('startbutton');
+			
+            canvas1 = document.getElementById('canvas1');
+            photo1 = document.getElementById('photo1');
+            takephotobutton = document.getElementById('takephotobutton');
+			choice = document.getElementById('r1').checked;
+			
+if(choice == true){
+    rate_value = document.getElementById('r1').value;
+    
+}else {
+    rate_value = document.getElementById('r2').value;
+}  
+//alert(choice);
+
+var context1 = canvas.getContext('2d');
+
+
+
+
+
+            video.addEventListener('canplay', function(ev) {
+                if (!streaming) {
+                    height = video.videoHeight / (video.videoWidth / width);
+
+                    if (isNaN(height)) {
+                        height = width / (4 / 3);
+                    }
+
+                    video.setAttribute('width', width);
+                    video.setAttribute('height', height);
+                    canvas.setAttribute('width', width);
+                    canvas.setAttribute('height', height);
+                    streaming = true;
+
+                }
+            }, false);
+
+
+
+ 
+            startbutton.addEventListener('click', function(ev) {
+			
+			startup();
+			            navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: false
+                })
+                .then(function(stream) {
+                    video.srcObject = stream;
+                    video.play();
+					
+                })
+                .catch(function(err) {
+                    console.log("An error occurred: " + err);
+                });
+                takepicture();
+                ev.preventDefault();
+            }, false);
+         takephotobutton.addEventListener('click', function(ev) {
+                takepicture_photo();
+                ev.preventDefault();
+            }, false);
+			
+            clearphoto();
+        }
+
+   
+
+     
+
+        function clearphoto() {
+            var context = canvas1.getContext('2d');
+            context.fillStyle = "#AAA";
+            context.fillRect(0, 0, canvas1.width, canvas1.height);
+
+            var data = canvas1.toDataURL('image/png');
+            photo.setAttribute('src', data);
+        }
+
+
+
+	
+        function takepicture() {
+
+            var context = canvas.getContext('2d');
+            if (width && height) {
+                canvas.width = width;
+                canvas.height = height;
+                context.drawImage(video, 0, 0, width, height);
+    
+	if (rate_value == 'idcard'){
+	var faceArea = 150;
+    var pX=(canvas.width/2 - faceArea/1.5);
+    var pY=canvas.height/2 - faceArea/2;
+
+    context.rect(pX,pY,faceArea+50,faceArea-20);
+    context.lineWidth = "6";
+    context.strokeStyle = "#6bfe70";    
+    context.stroke();
+	}
+		if (rate_value == 'face'){
+	context.beginPath();
+//context.arc(100, 75, 50, 0, 2 * Math.PI);
+
+drawEllipse(context, 100, 20, 120, 170);
+   //drawEllipseByCenter(context, 60,40,20,10);
+    context.lineWidth = "6";
+    context.strokeStyle = "#6bfe70";    
+    context.stroke();
+	}
+	
+                var data = canvas.toDataURL('image/png');
+                photo.setAttribute('src', data);
+            } else {
+                clearphoto();
+            }
+			setTimeout(takepicture, 100);
+        }
+		
+		
+	        function takepicture_photo() {
+
+            var context = canvas1.getContext('2d');
+            if (width && height) {
+                canvas1.width = width;
+                canvas1.height = height;
+                context.drawImage(video, 0, 0, width, height);
+	/*if (rate_value == 'idcard'){
+	var faceArea = 150;
+    var pX=(canvas.width/2 - faceArea/1.5);
+    var pY=canvas.height/2 - faceArea/2;
+
+    context.rect(pX,pY,faceArea+50,faceArea-20);
+    context.lineWidth = "6";
+    context.strokeStyle = "#6bfe70";    
+    context.stroke();
+	}
+		if (rate_value == 'face'){
+	context.beginPath();
+//context.arc(100, 75, 50, 0, 2 * Math.PI);
+drawEllipse(context, 100, 20, 120, 170);
+//drawEllipseByCenter(context, 60,40,20,10);
+    context.lineWidth = "6";
+    context.strokeStyle = "#6bfe70";    
+    context.stroke();
+	}*/
+	
+                var data = canvas1.toDataURL('image/png');
+                photo.setAttribute('src', data);
+            } else {
+                clearphoto();
+            }
+			//setTimeout(takepicture, 100);
+        }	
+function drawEllipseByCenter(ctx, cx, cy, w, h) {
+  drawEllipse(ctx, cx - w/2.0, cy - h/2.0, w, h);
+}
+
+function drawEllipse(ctx, x, y, w, h) {
+  var kappa = .5522848,
+      ox = (w / 2) * kappa, // control point offset horizontal
+      oy = (h / 2) * kappa, // control point offset vertical
+      xe = x + w,           // x-end
+      ye = y + h,           // y-end
+      xm = x + w / 2,       // x-middle
+      ym = y + h / 2;       // y-middle
+
+  ctx.beginPath();
+  ctx.moveTo(x, ym);
+  ctx.bezierCurveTo(x, ym - oy, xm - ox, y, xm, y);
+  ctx.bezierCurveTo(xm + ox, y, xe, ym - oy, xe, ym);
+  ctx.bezierCurveTo(xe, ym + oy, xm + ox, ye, xm, ye);
+  ctx.bezierCurveTo(xm - ox, ye, x, ym + oy, x, ym);
+  //ctx.closePath(); // not used correctly, see comments (use to close off open path)
+  ctx.stroke();
+}
+function restarts(){
+startup();
+
+}
+
+        window.addEventListener('load', startup, false);
+    })();
+    </script>
+</body>
+
+</html>
